@@ -14,4 +14,4 @@ And when Text UI is active ```0.02 ~ 0.03ms```:
 
 2 - Extract the file into your server.
 
-3 - Add ```ensure lb_lb_revivenpc``` to your server.cfg.
+3 - Add ```ensure lb_revivenpc``` to your server.cfg.
