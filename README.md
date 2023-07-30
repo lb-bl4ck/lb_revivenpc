@@ -16,7 +16,7 @@ And when Text UI is active `0.02 ~ 0.03ms`:
 - [ox_lib](https://github.com/overextended/ox_lib) (notification and text ui system)
 
 ## Installation
-1 - Download the lastest [release](https://github.com/lb-bl4ck/lb_revivenpc/releases).
+1 - Download the latest [release](https://github.com/lb-bl4ck/lb_revivenpc/releases).
 
 2 - Extract the file into your server.
 
