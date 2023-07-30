@@ -10,9 +10,16 @@ And when Text UI is active `0.02 ~ 0.03ms`:
 
 ![lb_revivenpc-textui](https://github.com/lb-bl4ck/lb_revivenpc/assets/140919445/00fe27a1-6d9f-4d5b-bec7-95710d0af68f)
 
+## Dependencies
+
+- [esx_ambulancejob](https://github.com/esx-framework/esx_ambulancejob)
+- [ox_lib](https://github.com/overextended/ox_lib) (notification and text ui system)
+
 ## Installation
 1 - Download the lastest [release](https://github.com/lb-bl4ck/lb_revivenpc/releases).
 
 2 - Extract the file into your server.
 
-3 - Add `ensure lb_revivenpc` to your server.cfg.
+3 - Remove `-main` from folder name.
+
+4 - Add `ensure lb_revivenpc` to your server.cfg.
