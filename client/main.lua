@@ -2,8 +2,9 @@ local textui = false
 local pedCreated = false
 local npc = nil
 local currentPedCoord = nil
+local playerLoaded = false
 
-function createNPC(model, coords)
+local function createNPC(model, coords)
     lib.requestModel(model)
     NPC = CreatePed(4, model, coords.x, coords.y, coords.z, coords.w, false, true)
     SetEntityInvincible(NPC, true)
@@ -14,7 +15,24 @@ function createNPC(model, coords)
     return NPC
 end
 
-Citizen.CreateThread(function()
+local function checkService()
+    local count = 0
+    local finished = false
+    ESX.TriggerServerCallback('esx_service:getInServiceList', function(inServiceList)
+        for k,v in pairs(inServiceList) do
+            if v == true then
+                count = count + 1
+            end
+        end
+        finished = true
+    end, 'ambulance')
+    while not finished do
+        Wait(5)
+    end
+    return count
+end
+
+local function mainThreadOne()
     local player = PlayerPedId()
 
     if Config.enableBlips then
@@ -31,7 +49,7 @@ Citizen.CreateThread(function()
         end
     end
 
-    while true do
+    while playerLoaded do
         Citizen.Wait(2000)
         local playerCoords = GetEntityCoords(player)
         local closestDistance = Config.drawDistance + 10
@@ -39,8 +57,16 @@ Citizen.CreateThread(function()
         for i = 1, #Config.pedMedics do
             local distance = #(playerCoords - vector3(Config.pedMedics[i].x, Config.pedMedics[i].y, Config.pedMedics[i].z))
             if distance <= closestDistance then
-                closestDistance = distance
-                closestCoord = Config.pedMedics[i]
+                if Config.duty then
+                    local connectedCount = lib.callback.await('lb_revivenpc:EMScount')
+                    if connectedCount < Config.maxEMS then
+                        closestDistance = distance
+                        closestCoord = Config.pedMedics[i]
+                    end
+                else
+                    closestDistance = distance
+                    closestCoord = Config.pedMedics[i]
+                end
             end
         end
         if closestDistance <= Config.drawDistance then
@@ -60,11 +86,11 @@ Citizen.CreateThread(function()
             currentPedCoord = nil
         end
     end
-end)
+end
 
-Citizen.CreateThread(function()
+local function mainThreadTwo()
     local player = PlayerPedId()
-    while true do
+    while playerLoaded do
         local sleep = 5000
         local playerCoords = GetEntityCoords(player)
         local closestDistance = Config.drawDistance + 10
@@ -126,4 +152,20 @@ Citizen.CreateThread(function()
         end
         Citizen.Wait(sleep)
     end
+end
+
+AddEventHandler('esx:onPlayerLogout', function()
+    playerLoaded = false
+    if pedCreated or npc ~= nil then
+        DeleteEntity(npc)
+        npc = nil
+        pedCreated = false
+        currentPedCoord = nil
+    end
+end)
+
+AddEventHandler('esx:onPlayerSpawn', function()
+    playerLoaded = true
+	CreateThread(mainThreadOne)
+    CreateThread(mainThreadTwo)
 end)
