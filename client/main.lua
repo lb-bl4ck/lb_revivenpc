@@ -15,23 +15,6 @@ local function createNPC(model, coords)
     return NPC
 end
 
-local function checkService()
-    local count = 0
-    local finished = false
-    ESX.TriggerServerCallback('esx_service:getInServiceList', function(inServiceList)
-        for k,v in pairs(inServiceList) do
-            if v == true then
-                count = count + 1
-            end
-        end
-        finished = true
-    end, 'ambulance')
-    while not finished do
-        Wait(5)
-    end
-    return count
-end
-
 local function mainThreadOne()
     local player = PlayerPedId()
 
