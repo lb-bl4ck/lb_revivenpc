@@ -8,7 +8,7 @@ Config.drawDistance         = 20 -- Changes the distance at which the ped spawns
 Config.revivePrice          = 3000
 Config.healPrice            = 500
 Config.allowBankPayment     = true
-Config.duty                 = true -- if true peds will only spawn when there is less EMS than indicated in Config.maxEMS
+Config.duty                 = false -- if true peds will only spawn when there is less EMS than indicated in Config.maxEMS
 Config.maxEMS               = 1 -- How many EMS should be conected to disable the peds (only works if Config.duty is true)
 Config.pedMedics            = {
     -- Add as many as you want
