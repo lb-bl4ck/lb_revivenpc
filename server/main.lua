@@ -1,24 +1,28 @@
-ESX.RegisterServerCallback('lb_revivenpc:checkMoney', function(source, cb, price)
+lib.callback.register('lb_revivenpc:checkMoney', function(source, price)
     local xPlayer = ESX.GetPlayerFromId(source)
     local cashMoney = xPlayer.getMoney()
     local bankMoney = xPlayer.getAccount('bank').money
 
+    if cashMoney == nil or bankMoney == nil then
+        return false
+    end
+    
     if (cashMoney >= price) or (Config.allowBankPayment and bankMoney >= price) then
         if (Config.allowBankPayment and bankMoney >= price) then
             account = 'bank'
         else
             account = 'money'
         end
-        cb({hasEnoughMoney = true, account = account})
+        return true, account
     else
         if (bankMoney >= price) and not Config.allowBankPayment then
             TriggerClientEvent('ox_lib:notify', source, {desription = Translate('ped_onlyCash')})
         end
-        cb({hasEnoughMoney = false})
+        return false
     end
 end)
 
-lib.callback.register('lb_revivenpc:EMScount', function(source)
+lib.callback.register('lb_revivenpc:EMScount', function()
     local players = ESX.GetPlayers()
     local count = 0
 
