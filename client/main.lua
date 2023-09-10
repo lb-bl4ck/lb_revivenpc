@@ -91,7 +91,7 @@ local function mainThreadTwo()
                 sleep = 25
                 if IsEntityDead(player) then
                     action = 'revive'
-                elseif GetEntityHealth(player) < Config.minLife then
+                elseif GetEntityHealth(player) < Config.maxLife then
                     action = 'heal'
                 end
             end
