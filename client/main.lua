@@ -1,8 +1,5 @@
-local textui = false
-local pedCreated = false
-local npc = nil
-local currentPedCoord = nil
-local playerLoaded = false
+local pedCreated, playerLoaded = false, false
+local npc, currentPedCoord = nil, nil
 
 local function createNPC(model, coords)
     lib.requestModel(model)
@@ -13,6 +10,23 @@ local function createNPC(model, coords)
     SetBlockingOfNonTemporaryEvents(NPC, true)
     TaskStartScenarioInPlace(NPC, 'WORLD_HUMAN_CLIPBOARD')
     return NPC
+end
+
+local function checkService()
+    local count = 0
+    local finished = false
+    ESX.TriggerServerCallback('esx_service:getInServiceList', function(inServiceList)
+        for k,v in pairs(inServiceList) do
+            if v == true then
+                count = count + 1
+            end
+        end
+        finished = true
+    end, 'ambulance')
+    while not finished do
+        Wait(5)
+    end
+    return count
 end
 
 local function mainThreadOne()
@@ -73,12 +87,16 @@ end
 
 local function mainThreadTwo()
     local player = PlayerPedId()
+    local textuiShown = false
+
     while playerLoaded do
         local sleep = 5000
         local playerCoords = GetEntityCoords(player)
         local closestDistance = Config.drawDistance + 10
         local closestCoord = nil
         local action = nil
+        local hasEnoughMoney = false
+        local account = nil
 
         for i = 1, #Config.pedMedics do
             local distance = #(playerCoords - vector3(Config.pedMedics[i].x, Config.pedMedics[i].y, Config.pedMedics[i].z))
@@ -88,7 +106,7 @@ local function mainThreadTwo()
                 closestCoord = Config.pedMedics[i]
             end
             if closestDistance <= 2 and currentPedCoord == closestCoord then
-                sleep = 25
+                sleep = 1
                 if IsEntityDead(player) then
                     action = 'revive'
                 elseif GetEntityHealth(player) < Config.maxLife then
@@ -97,40 +115,38 @@ local function mainThreadTwo()
             end
         end
 
-        if action == 'revive' then
-            if not textui then
-                lib.showTextUI(Translate('ped_revive', Config.revivePrice), {icon = 'fa-solid fa-hand-holding-heart'})
-                textui = true
+        if action == 'revive' or action == 'heal' then
+            if not textuiShown then
+                local message = Translate('ped_revive', Config.revivePrice)
+                if action == 'heal' then
+                    message = Translate('ped_heal', Config.healPrice)
+                end
+                lib.showTextUI(message, {icon = 'fa-solid fa-hand-holding-heart'})
+                textuiShown = true
             end
-            if IsControlJustPressed(0, 38) then
-                ESX.TriggerServerCallback('lb_revivenpc:checkMoney', function(result, account)
-                    if result.hasEnoughMoney then
+
+            if IsControlJustReleased(0, 38) then
+                hasEnoughMoney, account = lib.callback.await('lb_revivenpc:checkMoney', 1000, Config.revivePrice)
+                if action == 'heal' then
+                    hasEnoughMoney, account = lib.callback.await('lb_revivenpc:checkMoney', 1000, Config.healPrice)
+                end
+                if hasEnoughMoney then
+                    if action == 'revive' then
                         TriggerEvent('esx_ambulancejob:revive')
-                        TriggerServerEvent('lb_revivenpc:payment', result.account, action)
-                    else
-                        lib.notify({description = Translate('ped_notEnoughMoney')})
-                    end
-                end, Config.revivePrice)
-            end
-        elseif action == 'heal' then
-            if not textui then
-                lib.showTextUI(Translate('ped_heal', Config.healPrice), {icon = 'fa-solid fa-heart-circle-plus'})
-                textui = true
-            end
-            if IsControlJustPressed(0, 38) then
-                ESX.TriggerServerCallback('lb_revivenpc:checkMoney', function(result, account)
-                    if result.hasEnoughMoney then
+                    elseif action == 'heal' then
                         TriggerEvent('esx_ambulancejob:heal', 'big', false)
-                        TriggerServerEvent('lb_revivenpc:payment', result.account, action)
-                    else
-                        lib.notify({description = Translate('ped_notEnoughMoney')})
                     end
-                end, Config.healPrice)
+
+                    TriggerServerEvent('lb_revivenpc:payment', account, action)
+                    textuiShown = false
+                else
+                    lib.notify({description = Translate('ped_notEnoughMoney')})
+                end
             end
         else
-            if textui then
+            if textuiShown then
                 lib.hideTextUI()
-                textui = false
+                textuiShown = false
             end
         end
         Citizen.Wait(sleep)
@@ -148,7 +164,15 @@ AddEventHandler('esx:onPlayerLogout', function()
 end)
 
 AddEventHandler('esx:onPlayerSpawn', function()
-    playerLoaded = true
-	CreateThread(mainThreadOne)
-    CreateThread(mainThreadTwo)
+    if not playerLoaded then
+        playerLoaded = true
+        CreateThread(mainThreadOne)
+        CreateThread(mainThreadTwo)
+    end
 end)
+
+if Config.debug == true and not playerLoaded then
+    playerLoaded = true
+    CreateThread(mainThreadOne)
+    CreateThread(mainThreadTwo)
+end
