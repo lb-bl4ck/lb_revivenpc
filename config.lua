@@ -1,6 +1,6 @@
 Config                      = {}
 Config.Locale               = GetConvar('esx:locale', 'en')
-Config.pedModel             = `s_m_m_doctor_01`     -- Change the ped model - See https://docs.fivem.net/docs/game-references/ped-models/
+Config.pedModel             = `s_m_m_doctor_01` -- Change the ped model - See https://docs.fivem.net/docs/game-references/ped-models/
 Config.enableBlips          = true
 Config.blipSprite           = 280
 Config.blipColor            = 2
@@ -9,6 +9,7 @@ Config.revivePrice          = 3000
 Config.healPrice            = 500
 Config.maxLife              = 200
 Config.allowBankPayment     = true
+Config.debug                = false
 Config.duty                 = false -- if true peds will only spawn when there is less EMS than indicated in Config.maxEMS
 Config.maxEMS               = 1 -- How many EMS should be conected to disable the peds (only works if Config.duty is true)
 Config.pedMedics            = {
