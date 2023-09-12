@@ -1,4 +1,4 @@
-local pedCreated, playerLoaded = false, false
+local pedCreated, playerLoaded, started = false, false, false
 local npc, currentPedCoord = nil, nil
 
 local function createNPC(model, coords)
@@ -95,8 +95,6 @@ local function mainThreadTwo()
         local closestDistance = Config.drawDistance + 10
         local closestCoord = nil
         local action = nil
-        local hasEnoughMoney = false
-        local account = nil
 
         for i = 1, #Config.pedMedics do
             local distance = #(playerCoords - vector3(Config.pedMedics[i].x, Config.pedMedics[i].y, Config.pedMedics[i].z))
@@ -117,7 +115,10 @@ local function mainThreadTwo()
 
         if action == 'revive' or action == 'heal' then
             if not textuiShown then
-                local message = Translate('ped_revive', Config.revivePrice)
+                local message = nil
+                if action == 'revive' then
+                    message = Translate('ped_revive', Config.revivePrice)
+                end
                 if action == 'heal' then
                     message = Translate('ped_heal', Config.healPrice)
                 end
@@ -126,9 +127,16 @@ local function mainThreadTwo()
             end
 
             if IsControlJustReleased(0, 38) then
-                hasEnoughMoney, account = lib.callback.await('lb_revivenpc:checkMoney', 1000, Config.revivePrice)
+                local hasEnoughMoney = false
+                local account = nil
+                if action == 'revive' then
+                    hasEnoughMoney, account, done = lib.callback.await('lb_revivenpc:checkMoney', 1000, Config.revivePrice)
+                end
                 if action == 'heal' then
-                    hasEnoughMoney, account = lib.callback.await('lb_revivenpc:checkMoney', 1000, Config.healPrice)
+                    hasEnoughMoney, account, done = lib.callback.await('lb_revivenpc:checkMoney', 1000, Config.healPrice)
+                end
+                while not done do
+                    Wait(0)
                 end
                 if hasEnoughMoney then
                     if action == 'revive' then
@@ -138,7 +146,6 @@ local function mainThreadTwo()
                     end
 
                     TriggerServerEvent('lb_revivenpc:payment', account, action)
-                    textuiShown = false
                 else
                     lib.notify({description = Translate('ped_notEnoughMoney')})
                 end
@@ -154,6 +161,7 @@ local function mainThreadTwo()
 end
 
 AddEventHandler('esx:onPlayerLogout', function()
+    started = false
     playerLoaded = false
     if pedCreated or npc ~= nil then
         DeleteEntity(npc)
@@ -164,6 +172,7 @@ AddEventHandler('esx:onPlayerLogout', function()
 end)
 
 AddEventHandler('esx:onPlayerSpawn', function()
+    started = true
     if not playerLoaded then
         playerLoaded = true
         CreateThread(mainThreadOne)
@@ -171,7 +180,8 @@ AddEventHandler('esx:onPlayerSpawn', function()
     end
 end)
 
-if Config.debug == true and not playerLoaded then
+if Config.debug and not started then
+    started = true
     playerLoaded = true
     CreateThread(mainThreadOne)
     CreateThread(mainThreadTwo)
