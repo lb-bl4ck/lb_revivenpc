@@ -4,7 +4,7 @@ lib.callback.register('lb_revivenpc:checkMoney', function(source, price)
     local bankMoney = xPlayer.getAccount('bank').money
 
     if cashMoney == nil or bankMoney == nil then
-        return false
+        return false, false, true
     end
     
     if (cashMoney >= price) or (Config.allowBankPayment and bankMoney >= price) then
@@ -13,12 +13,12 @@ lib.callback.register('lb_revivenpc:checkMoney', function(source, price)
         else
             account = 'money'
         end
-        return true, account
+        return true, account, true
     else
         if (bankMoney >= price) and not Config.allowBankPayment then
             TriggerClientEvent('ox_lib:notify', source, {desription = Translate('ped_onlyCash')})
         end
-        return false
+        return false, nil, true
     end
 end)
 
